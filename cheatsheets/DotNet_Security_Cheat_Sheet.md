@@ -25,33 +25,35 @@ Receive security notifications by selecting the "Watch" button at the following 
 
 ## .NET Framework Guidance
 
-The .NET Framework is the set of APIs that support an advanced type system, data, graphics, network, file handling and most of the rest of what is needed to write enterprise apps in the Microsoft ecosystem. It is a nearly ubiquitous library that is strongly named and versioned at the assembly level.
+The .NET Framework constitutes a collection of APIs that facilitate the usage of an advanced type system, manage data, graphics, networking, file operations, and more - essentially covering a vast majority of requirements for developing enterprise applications within the Microsoft ecosystem. It is a nearly ubiquitous library that is strongly named and versioned at the assembly level.
 
 ### Data Access
+
+#### General data access guidance
 
 - Use [Parameterized SQL](https://docs.microsoft.com/en-us/dotnet/api/system.data.sqlclient.sqlcommand.prepare?view=netframework-4.7.2) commands for all data access, without exception.
 - Do not use [SqlCommand](https://docs.microsoft.com/en-us/dotnet/api/system.data.sqlclient.sqlcommand) with a string parameter made up of a [concatenated SQL String](https://docs.microsoft.com/en-gb/visualstudio/code-quality/ca2100-review-sql-queries-for-security-vulnerabilities?view=vs-2017).
 - List allowable values coming from the user. Use enums, [TryParse](https://docs.microsoft.com/en-us/dotnet/api/system.int32.tryparse#System_Int32_TryParse_System_String_System_Int32__) or lookup values to assure that the data coming from the user is as expected.
     - Enums are still vulnerable to unexpected values because .NET only validates a successful cast to the underlying data type, integer by default. [Enum.IsDefined](https://docs.microsoft.com/en-us/dotnet/api/system.enum.isdefined) can validate whether the input value is valid within the list of defined constants.
 - Apply the principle of least privilege when setting up the Database User in your database of choice. The database user should only be able to access items that make sense for the use case.
-- Use of the [Entity Framework](https://docs.microsoft.com/en-us/ef/) is a very effective [SQL injection](https://owasp.org/www-community/attacks/SQL_Injection) prevention mechanism. **Remember that building your own ad hoc queries in Entity Framework is just as susceptible to SQLi as a plain SQL query**.
-- When using SQL Server, prefer [integrated authentication](https://docs.microsoft.com/en-us/sql/connect/odbc/linux-mac/using-integrated-authentication?view=sql-server-2017) over [SQL authentication](https://docs.microsoft.com/en-us/sql/relational-databases/security/choose-an-authentication-mode?view=sql-server-2017#connecting-through-sql-server-authentication).
-- Use [Always Encrypted](https://docs.microsoft.com/en-us/sql/relational-databases/security/encryption/always-encrypted-database-engine) where possible for sensitive data (SQL Server 2016 and SQL Azure),
+- Use of the [Entity Framework](https://docs.microsoft.com/en-us/ef/) is a very effective [SQL injection](SQL_Injection_Prevention_Cheat_Sheet.md) prevention mechanism. **Remember that building your own ad hoc queries in Entity Framework is just as susceptible to SQLi as a plain SQL query**.
+- When using SQL Server, prefer [integrated authentication](https://learn.microsoft.com/en-us/sql/connect/odbc/linux-mac/using-integrated-authentication?view=sql-server-ver16) over [SQL authentication](https://learn.microsoft.com/en-us/sql/relational-databases/security/choose-an-authentication-mode?view=sql-server-ver16#connecting-through-sql-server-authentication).
+- Use [Always Encrypted](https://docs.microsoft.com/en-us/sql/relational-databases/security/encryption/always-encrypted-database-engine) where possible for sensitive data (SQL Server 2016+ and SQL Azure),
 
 ### Cryptography
 
 #### General cryptography guidance
 
 - **Never, ever write your own cryptographic functions.**
-- Wherever possible, try and avoid writing any cryptographic code at all. Instead try and either use pre-existing secret management solutions or the secret management solution provided by your cloud provider. For more information, see the [OWASP Secrets Management Cheat Sheet](/Secrets_Management_Cheat_Sheet).
-- If you cannot use a pre-existing secret management solution, try and use a trusted and well known implementation library rather than using the libraries built into .NET as it is far too easy to make cryptographic errors with them.
+- Wherever possible, try and avoid writing any cryptographic code at all. Instead try and either use pre-existing secrets management solutions or the secret management solution provided by your cloud provider. For more information, see the [OWASP Secrets Management Cheat Sheet](Secrets_Management_Cheat_Sheet.md).
+- If you cannot use a pre-existing secrets management solution, try and use a trusted and well known implementation library rather than using the libraries built into .NET as it is far too easy to make cryptographic errors with them.
 - Make sure your application or protocol can easily support a future change of cryptographic algorithms.
 - Use [NuGet](https://docs.microsoft.com/en-us/nuget/) to keep all of your packages up to date. Watch the updates on your development setup, and plan updates to your applications accordingly.
 
 #### Encryption for storage
 
 - Use the [Windows Data Protection API (DPAPI)](https://docs.microsoft.com/en-us/dotnet/standard/security/how-to-use-data-protection) for secure local storage of sensitive data.
-- Where DPAPI cannot be used, follow the algorithm guidance in the [OWASP Cryptographic Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#algorithms).
+- Where DPAPI cannot be used, follow the algorithm guidance in the [OWASP Cryptographic Storage Cheat Sheet](Cryptographic_Storage_Cheat_Sheet.md#algorithms).
 
 The following code snippet shows an example of using AES-GCM to perform encryption/decryption of data. It is strongly recommended to have a cryptography expert review your final design and code, as even the most trivial error can severely weaken your encryption.
 
@@ -149,9 +151,9 @@ public static class AesGcmSimple
 
 The following code snippet shows an example of using Eliptic Curve/Diffie Helman (ECDH) together with AES-GCM to perform encryption/decryption of data between two different sides without the need the transfer the symmetric key between the two sides. Instead, the sides exchange public keys and can then use ECDH to generate a shared secret which can be used for the symmetric encryption.
 
- Again, it is strongly recommended to have a cryptography expert review your final design and code, as even the most trivial error can severely weaken your encryption.
+Again, it is strongly recommended to have a cryptography expert review your final design and code, as even the most trivial error can severely weaken your encryption.
 
-Note that this code sample relies on the AesGcmSimple class from the [previous section](#encryption-for-storage).
+Note that this code sample relies on the `AesGcmSimple` class from the [previous section](#encryption-for-storage).
 
 A few constraints/pitfalls with this code:
 
@@ -275,7 +277,7 @@ public class ECDHSimple
 - Lock down the config file.
     - Remove all aspects of configuration that are not in use.
     - Encrypt sensitive parts of the `web.config` using `aspnet_regiis -pe` ([command line help](https://docs.microsoft.com/en-us/previous-versions/dotnet/netframework-2.0/k6h9cz8h(v=vs.80))).
-- For Click Once applications, the .NET Framework should be upgraded to use the latest version to ensure `TLS 1.2` or later support.
+- For Click Once applications, the .NET Framework should be upgraded to use the latest version to ensure support of `TLS 1.2` or later.
 
 ## ASP NET Web Forms Guidance
 
@@ -285,7 +287,7 @@ ASP.NET Web Forms is the original browser-based application development API for 
 - Enable [requireSSL](https://docs.microsoft.com/en-us/dotnet/api/system.web.configuration.httpcookiessection.requiressl) on cookies and form elements and [HttpOnly](https://docs.microsoft.com/en-us/dotnet/api/system.web.configuration.httpcookiessection.httponlycookies) on cookies in the web.config.
 - Implement [customErrors](https://docs.microsoft.com/en-us/dotnet/api/system.web.configuration.customerror).
 - Make sure [tracing](http://www.iis.net/configreference/system.webserver/tracing) is turned off.
-- While viewstate isn't always appropriate for web development, using it can provide CSRF mitigation. To make the ViewState protect against CSRF attacks you need to set the [ViewStateUserKey](https://docs.microsoft.com/en-us/dotnet/api/system.web.ui.page.viewstateuserkey):
+- While ViewState isn't always appropriate for web development, using it can provide CSRF mitigation. To make the ViewState protect against CSRF attacks you need to set the [ViewStateUserKey](https://docs.microsoft.com/en-us/dotnet/api/system.web.ui.page.viewstateuserkey):
 
 ```csharp
 protected override OnInit(EventArgs e) {
@@ -421,7 +423,7 @@ HttpContext.Current.Response.Headers.Remove("Server");
 - Do not disable [validateRequest](http://www.asp.net/whitepapers/request-validation) in the `web.config` or the page setup. This value enables limited XSS protection in ASP.NET and should be left intact as it provides partial prevention of Cross Site Scripting. Complete request validation is recommended in addition to the built-in protections.
 - The 4.5 version of the .NET Frameworks includes the [AntiXssEncoder](https://docs.microsoft.com/en-us/dotnet/api/system.web.security.antixss.antixssencoder?view=netframework-4.7.2) library, which has a comprehensive input encoding library for the prevention of XSS. Use it.
 - List allowable values anytime user input is accepted.
-- Validate the URI format using [Uri.IsWellFormedUriString](https://docs.microsoft.com/en-us/dotnet/api/system.uri.iswellformeduristring).
+- Validate the format of URIs using [Uri.IsWellFormedUriString](https://docs.microsoft.com/en-us/dotnet/api/system.uri.iswellformeduristring).
 
 ### Forms authentication
 
@@ -436,13 +438,17 @@ HttpContext.Current.Response.Headers.Remove("Server");
 - Explicitly authorize resource requests.
 - Leverage role based authorization using `User.Identity.IsInRole`.
 
-## ASP NET MVC Guidance
+## .NET General Guidance
 
-ASP.NET MVC (Model–View–Controller) is a contemporary web application framework that uses more standardized HTTP communication than the Web Forms postback model.
+This section contains general guidance for .NET applications.
+This applies to all .NET applications, including ASP.NET, WPF, WinForms, and others.
 
 The OWASP Top 10 2017 lists the most prevalent and dangerous threats to web security in the world today and is reviewed every 3 years.
 
-This section is based on this. Your approach to securing your web application should be to start at the top threat A1 below and work down, this will ensure that any time spent on security will be spent most effectively spent and cover the top threats first and lesser threats afterwards. After covering the top 10 it is generally advisable to assess for other threats or get a professionally completed Penetration Test.
+This section is based on this list. Your approach to securing your web application should be to start at the top threat A1 below and work
+down; this will ensure that any time spent on security will be spent most effectively spent and cover the top threats first and lesser
+threats afterwards. After covering the top 10 it is generally advisable to assess for other threats or get a professionally completed
+Penetration Test.
 
 ### A1 Injection
 
@@ -454,7 +460,7 @@ DO: Use parameterized queries where a direct sql query must be used. More Inform
 
 e.g. In entity frameworks:
 
-```sql
+```csharp
 var sql = @"Update [User] SET FirstName = @FirstName WHERE Id = @Id";
 context.Database.ExecuteSqlCommand(
     sql,
@@ -462,23 +468,21 @@ context.Database.ExecuteSqlCommand(
     new SqlParameter("@Id", id));
 ```
 
-DO NOT: Concatenate strings anywhere in your code and execute them against your database (Known as dynamic sql).
+DO NOT: Concatenate strings anywhere in your code and execute them against your database (Known as *dynamic SQL*).
 
-NB: You can still accidentally do this with ORMs or Stored procedures so check everywhere.
+Note: You can still accidentally do this with ORMs or Stored procedures so check everywhere. For example:
 
-e.g
-
-```sql
-string strQry = "SELECT * FROM Users WHERE UserName='" + txtUser.Text + "' AND Password='"
+```csharp
+string sql = "SELECT * FROM Users WHERE UserName='" + txtUser.Text + "' AND Password='"
                 + txtPassword.Text + "'";
-EXEC strQry // SQL Injection vulnerability!
+context.Database.ExecuteSqlCommand(sql); // SQL Injection vulnerability!
 ```
 
-DO: Practice Least Privilege - Connect to the database using an account with a minimum set of permissions required to do it's job i.e. not the sa account
+DO: Practice Least Privilege - Connect to the database using an account with a minimum set of permissions required to do its job i.e. not the sa account
 
 #### OS Injection
 
-General guidance about OS Injection can be found on this [cheat sheet](OS_Command_Injection_Defense_Cheat_Sheet.md).
+General guidance about OS Injection can be found in the [OS Command Injection Defense Cheat Sheet](OS_Command_Injection_Defense_Cheat_Sheet.md).
 
 DO: Use [System.Diagnostics.Process.Start](https://docs.microsoft.com/en-us/dotnet/api/system.diagnostics.process.start?view=netframework-4.7.2) to call underlying OS functions.
 
@@ -536,21 +540,21 @@ DO: Look at alternatives to passing raw untrusted arguments via command-line par
 
 Almost any characters can be used in Distinguished Names. However, some must be escaped with the backslash `\` escape character. A table showing which characters that should be escaped for Active Directory can be found at the in the [LDAP Injection Prevention Cheat Sheet](LDAP_Injection_Prevention_Cheat_Sheet.md#introduction).
 
-NB: The space character must be escaped only if it is the leading or trailing character in a component name, such as a Common Name. Embedded spaces should not be escaped.
+Note: The space character must be escaped only if it is the leading or trailing character in a component name, such as a Common Name. Embedded spaces should not be escaped.
 
 More information can be found [here](LDAP_Injection_Prevention_Cheat_Sheet.md#introduction).
 
 ### A2 Broken Authentication
 
-DO: Use [ASP.net Core Identity](https://docs.microsoft.com/en-us/aspnet/core/security/authentication/identity?view=aspnetcore-2.2&).
-ASP.net Core Identity framework is well configured by default, where it uses secure password hashes and an individual salt. Identity uses the PBKDF2 hashing function for passwords, and they generate a random salt per user.
+DO: Use [ASP.NET Core Identity](https://docs.microsoft.com/en-us/aspnet/core/security/authentication/identity?view=aspnetcore-2.2&).
+ASP.NET Core Identity framework is well configured by default, where it uses secure password hashes and an individual salt. Identity uses the PBKDF2 hashing function for passwords, and generates a random salt per user.
 
 DO: Set secure password policy
 
-e.g ASP.net Core Identity
+e.g ASP.NET Core Identity
 
 ``` csharp
-//startup.cs
+//Startup.cs
 services.Configure<IdentityOptions>(options =>
 {
  // Password settings
@@ -560,7 +564,6 @@ services.Configure<IdentityOptions>(options =>
  options.Password.RequireUppercase = true;
  options.Password.RequireLowercase = true;
  options.Password.RequiredUniqueChars = 6;
-
 
  options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(30);
  options.Lockout.MaxFailedAccessAttempts = 3;
@@ -576,7 +579,7 @@ DO: Set a cookie policy
 e.g
 
 ``` csharp
-//startup.cs
+//Startup.cs
 services.ConfigureApplicationCookie(options =>
 {
  options.Cookie.HttpOnly = true;
@@ -587,22 +590,22 @@ services.ConfigureApplicationCookie(options =>
 
 ### A3 Sensitive Data Exposure
 
-DO NOT: [Store encrypted passwords](Password_Storage_Cheat_Sheet.md#do-not-limit-the-character-set-and-set-long-max-lengths-for-credentials).
+DO NOT: [Store encrypted passwords](Password_Storage_Cheat_Sheet.md#hashing-vs-encryption).
 
-DO: Use a strong hash to store password credentials. For hash refer to [this section](Password_Storage_Cheat_Sheet.md#guidance).
+DO: Use a strong hashing algorithm to store password credentials. Refer to the [Password Storage Cheat Sheet](Password_Storage_Cheat_Sheet.md).
 
-DO: Enforce passwords with a minimum complexity that will survive a dictionary attack i.e. longer passwords that use the full character set (numbers, symbols and letters) to increase the entropy.
+DO: Enforce passwords with a minimum complexity that will survive a dictionary attack; i.e. longer passwords that use the full character set (numbers, symbols and letters) to increase entropy.
 
-DO: Use a strong encryption routine such as AES-512 where personally identifiable data needs to be restored to it's original format. Protect encryption keys more than any other asset, please find [more information of storing encryption keys at rest](Password_Storage_Cheat_Sheet.md#guidance).
-Apply the following test: Would you be happy leaving the data on a spreadsheet on a bus for everyone to read. Assume the attacker can get direct access to your database and protect it accordingly. More information can be found [here](Transport_Layer_Protection_Cheat_Sheet.md).
+DO: Use a strong encryption algorithm such as AES-512 where personally identifiable data needs to be restored to it's original format. Protect encryption keys more than any other asset, please find [more information of storing encryption keys at rest](Key_Management_Cheat_Sheet.md#storage).
+Apply the following test: Would you be happy leaving the data on a spreadsheet on a bus for everyone to read? Assume the attacker can get direct access to your database and protect it accordingly.
 
-DO: Use TLS 1.2 for your entire site. Get a free certificate [LetsEncrypt.org](https://letsencrypt.org/).
+DO: Use TLS 1.2+ for your entire site. Get a free certificate [LetsEncrypt.org](https://letsencrypt.org/) and automate renewals.
 
 DO NOT: [Allow SSL, this is now obsolete](https://github.com/ssllabs/research/wiki/SSL-and-TLS-Deployment-Best-Practices).
 
-DO: Have a strong TLS policy (see [SSL Best Practices](https://www.ssllabs.com/projects/best-practices/index.html)), use TLS 1.2 wherever possible. Then check the configuration using [SSL Test](https://www.ssllabs.com/ssltest/) or [TestSSL](https://testssl.sh/).
+DO: Have a strong TLS policy (see [SSL Best Practices](https://www.ssllabs.com/projects/best-practices/index.html)), use TLS 1.2+ wherever possible. Then check the configuration using [SSL Test](https://www.ssllabs.com/ssltest/) or [TestSSL](https://testssl.sh/).
 
-DO: Ensure headers are not disclosing information about your application. See [HttpHeaders.cs](https://github.com/johnstaveley/SecurityEssentials/blob/master/SecurityEssentials/Core/HttpHeaders.cs) , [Dionach StripHeaders](https://github.com/Dionach/StripHeaders/), disable via `web.config` or [startup.cs](https://medium.com/bugbountywriteup/security-headers-1c770105940b):
+DO: Ensure headers are not disclosing information about your application. See [HttpHeaders.cs](https://github.com/johnstaveley/SecurityEssentials/blob/master/SecurityEssentials/Core/HttpHeaders.cs), [Dionach StripHeaders](https://github.com/Dionach/StripHeaders/), disable via `web.config` or [Startup.cs](https://medium.com/bugbountywriteup/security-headers-1c770105940b):
 
 More information on Transport Layer Protection can be found [here](Transport_Layer_Protection_Cheat_Sheet.md).
 e.g Web.config
@@ -648,10 +651,10 @@ app.UseCsp(opts => opts
  );
 ```
 
-For more information about headers can be found [here](https://owasp.org/www-project-secure-headers/).
+More information about headers can be found at the [OWASP Secure Headers Project](https://owasp.org/www-project-secure-headers/).
 
 ### A4 XML External Entities (XXE)
-
+<!-- TODO: Removed in 2021 list -->
 XXE attacks occur when an XML parse does not properly process user input that contains external entity declaration in the doctype of an XML payload.
 
 [This article](https://docs.microsoft.com/en-us/dotnet/standard/data/xml/xml-processing-options) discusses the most common XML Processing Options for .NET.
@@ -937,6 +940,7 @@ If you are using the .NET Framework, you can find some code snippets [here](http
 More information can be found [here](Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.md) for Cross-Site Request Forgery.
 
 ### A7 Cross-Site Scripting (XSS)
+<!-- TODO: Removed in 2021 list -->
 
 DO NOT: Trust any data the user sends you, prefer allow lists (always safe) over block lists
 
@@ -970,6 +974,7 @@ DO: Enable a [Content Security Policy](Content_Security_Policy_Cheat_Sheet.md#co
 More information can be found [here](Cross_Site_Scripting_Prevention_Cheat_Sheet.md) for Cross-Site Scripting.
 
 ### A8 Insecure Deserialization
+<!-- TODO: Removed in 2021 list -->
 
 Information about Insecure Deserialization can be found on this [cheat sheet](Deserialization_Cheat_Sheet.md#net-csharp).
 
